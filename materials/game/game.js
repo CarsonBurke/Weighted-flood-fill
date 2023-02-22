@@ -1,48 +1,75 @@
+import { adjacentOffsets } from "./gameConstants"
+
 class Game {
+    
+    running = false
+    graph = new Uint8Array()
+    visited = new Uint8Array()
+
     constructor() {
 
         const game = this
-
         game.ID = env.newID()
-        game.players = {}
-        game.objects = {}
+
         game.running = true
+        game.graph = new Uint8Array(env.graphSize * env.graphSize)
+        game.visited = new Uint8Array(env.graphSize * env.graphSize)
+        game.floodGen
 
         env.games[game.ID] = game
     }
+    run() {
+
+        while (game.flooded.length) {
+        let nextFloodGen = []
+
+        for (let x = 0; x < env.graphSize; x++) {
+            for (let y = 0; y < env.graphSize; y++) {
+
+                for (offset of adjacentOffsets) {
+
+                    const adjCoord = {
+                        x: x + offset.x,
+                        y: y + offset.y
+                    }
+ 
+                    if (game.graph[packCoord(adjCoord)] === undefined) continue
+
+                    if (game.visited[packCoord(adjCoord)] === 1) continue
+                    game.visited[packCoord(adjCoord)] = 1
+
+                    nextFloodGen.push(adjCoord)
+                }
+            }
+        }
+
+        game.flooded = nextFloodGen
+    }
+
+        this.visualize()
+    }
 }
 
-Game.prototype.init = function(inputs, outputs, weightLayers, activationLayers) {
+Game.prototype.init = function() {
 
     const game = this
 
-    // Create players
+    for (let x = 0; x < env.graphSize; x++) {
+        for (let y = 0; y < env.graphSize; y++) {
 
-    /* new Player('person', game.ID) */
-
-    // Create x number of units
-
-    for (let i = 0; i < 100; i++) {
-
-        new ExampleUnit('example', game.ID, Object.keys(game.players)[0], 10, 10, inputs, outputs, weightLayers, activationLayers)
+            game.graph[packXY(x, y)] = 0
+            if (Math.random() > 0.5) game.visited[packXY(x, y)] = 1
+        }
     }
+
+    game.graph[packXY(25, 25)] = 255
 }
 
 Game.prototype.reset = function() {
 
     const game = this
 
-    game.players = {}
 
-    for (const type in game.objects) {
-
-        for (const ID in game.objects[type]) {
-
-            const gameObj = game.objects[type][ID]
-
-            gameObj.delete()
-        }
-    }
 
     game.running = true
 }
@@ -51,13 +78,17 @@ Game.prototype.visualize = function() {
 
     const game = this
 
-    for (const type in game.objects) {
+    for (let x = 0; x < env.graphSize; x++) {
+        for (let y = 0; y < env.graphSize; y++) {
 
-        for (const ID in game.objects[type]) {
-
-            const gameObj = game.objects[type][ID]
-
-            gameObj.draw()
+            let color = 'grey'
+            if (game.graph[packXY(x, y)] === 255) color = 'red'
+            else if (game.visited[packXY(x, y)] === 1) color = 'green'
+            env.cm.fillStyle = color
+            console.log(x, y, color)
+            env.cm.beginPath();
+            env.cm.fillRect(x * env.coordSize, y * env.coordSize, env.coordSize, env.coordSize);
+            env.cm.stroke();
         }
     }
 }
