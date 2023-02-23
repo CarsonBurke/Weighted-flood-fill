@@ -3,7 +3,7 @@ class Env {
 
         this.gamesAmount = 1
         this.games = {}
-        this.graphSize = 50
+        this.graphSize = 100
         this.coordSize = 10
         this.IDIndex = 0
         this.width = this.graphSize * this.coordSize
@@ -12,13 +12,11 @@ class Env {
 
         this.tick = 0
         this.roundTick = 0
-        this.generation = 1
         this.speed = 1
 
         this.stats = [
             'tick',
             'roundTick',
-            'generation',
             'speed'
         ]
     }
@@ -88,17 +86,20 @@ Env.prototype.run = function() {
     // Restore the transform
 
     env.cm.restore()
-    console.log('games', Object.keys(env.games).length)
+
+    let runningGames = 0
+
     for (const gameID in env.games) {
-        console.log(gameID)
+
         const game = env.games[gameID]
-        
+        if (game.running) runningGames += 1
+
         game.run()
     }
 
     //
 
-    if (env.tick - env.lastReset > env.width + env.height) {
+    if (!runningGames) {
 
         env.reset()
     }

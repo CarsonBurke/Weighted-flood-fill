@@ -1,5 +1,3 @@
-import { adjacentOffsets } from "./gameConstants"
-
 class Game {
     
     running = false
@@ -8,84 +6,105 @@ class Game {
 
     constructor() {
 
-        const game = this
-        game.ID = env.newID()
+        this.ID = env.newID()
 
-        game.running = true
-        game.graph = new Uint8Array(env.graphSize * env.graphSize)
-        game.visited = new Uint8Array(env.graphSize * env.graphSize)
-        game.floodGen
-
-        env.games[game.ID] = game
+        env.games[this.ID] = this
     }
     run() {
+        if (!this.running) {
+            this.visualize()
+            return
+        }
 
-        while (game.flooded.length) {
-        let nextFloodGen = []
+        while (this.floodGenGraph.length) {
 
-        for (let x = 0; x < env.graphSize; x++) {
-            for (let y = 0; y < env.graphSize; y++) {
+            let nextFloodGen = []
 
-                for (offset of adjacentOffsets) {
+            for (const coord of this.floodGenGraph) {
+
+                if (this.graph[packCoord(coord)] > 0) {
+
+                    this.graph[packCoord(coord)] -= 1
+                    nextFloodGen.push(coord)
+                    continue
+                }
+
+                for (const offset of adjacentOffsets) {
 
                     const adjCoord = {
-                        x: x + offset.x,
-                        y: y + offset.y
+                        x: coord.x + offset.x,
+                        y: coord.y + offset.y
                     }
- 
-                    if (game.graph[packCoord(adjCoord)] === undefined) continue
 
-                    if (game.visited[packCoord(adjCoord)] === 1) continue
-                    game.visited[packCoord(adjCoord)] = 1
+                    // We're outside the map
+                    console.log(isXYInGraph(adjCoord.x, adjCoord.y))
+                    if (!isXYInGraph(adjCoord.x, adjCoord.y)) continue
 
+                    if (this.graph[packCoord(adjCoord)] === 255) continue
+                    
+                    if (this.visited[packCoord(adjCoord)] === 1) continue
+                    this.visited[packCoord(adjCoord)] = 1
+                    
                     nextFloodGen.push(adjCoord)
                 }
             }
+            
+            this.floodGenGraph = nextFloodGen
+            break
         }
 
-        game.flooded = nextFloodGen
-    }
+        if (!this.floodGenGraph.length) this.running = false
 
         this.visualize()
+    }
+    reset() {
+
+        this.init()
     }
 }
 
 Game.prototype.init = function() {
 
-    const game = this
+    this.running = true
+    this.graph = new Uint8Array(env.graphSize * env.graphSize)
+    this.visited = new Uint8Array(env.graphSize * env.graphSize)
+    this.floodGenGraph = [{
+        x: 2,
+        y: 2
+    }]
+    for (const coord of this.floodGenGraph) this.visited[packCoord(coord)] = 1
 
     for (let x = 0; x < env.graphSize; x++) {
         for (let y = 0; y < env.graphSize; y++) {
 
-            game.graph[packXY(x, y)] = 0
-            if (Math.random() > 0.5) game.visited[packXY(x, y)] = 1
+            this.graph[packXY(x, y)] = 0
         }
     }
 
-    game.graph[packXY(25, 25)] = 255
-}
+    let coords = findCoordsInsideRect(15, 10, 30, 20)
 
-Game.prototype.reset = function() {
+    for (const coord of coords) {
 
-    const game = this
+        this.graph[packCoord(coord)] = 255
+    }
 
+    coords = findCoordsInsideRect(8, 60, 80, 25)
 
+    for (const coord of coords) {
 
-    game.running = true
+        this.graph[packCoord(coord)] = 255
+    }
 }
 
 Game.prototype.visualize = function() {
 
-    const game = this
-
     for (let x = 0; x < env.graphSize; x++) {
         for (let y = 0; y < env.graphSize; y++) {
 
-            let color = 'grey'
-            if (game.graph[packXY(x, y)] === 255) color = 'red'
-            else if (game.visited[packXY(x, y)] === 1) color = 'green'
+            let color = `hsl(${this.graph[packXY(x, y)] / 2}, 100%, 60%)`
+            if (this.visited[packXY(x, y)] === 1 && this.graph[packXY(x, y)] === 0) color = 'blue'
             env.cm.fillStyle = color
-            console.log(x, y, color)
+
             env.cm.beginPath();
             env.cm.fillRect(x * env.coordSize, y * env.coordSize, env.coordSize, env.coordSize);
             env.cm.stroke();
