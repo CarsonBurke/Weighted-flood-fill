@@ -79,7 +79,7 @@ Game.prototype.init = function() {
     this.running = true
     this.graph = new Uint8Array(env.graphSize * env.graphSize)
     this.visited = new Uint8Array(env.graphSize * env.graphSize)
-    this.floodGenGraph = new Set([packXY(env.graphSize - 1, env.graphSize - 1)])
+    this.floodGenGraph = new Set([packXY(71, 81)])
     for (const packedCoord of this.floodGenGraph) this.visited[packedCoord] = 1
     this.goals = new Set([packXY(35, 10), packXY(5, 40)])
 
@@ -139,6 +139,13 @@ Game.prototype.init = function() {
         this.graph[packCoord(coord)] = 255
     }
 
+    coords = findCoordsInsideRect(60, 80, 70, 95)
+
+    for (const coord of coords) {
+
+        this.graph[packCoord(coord)] = 255
+    }
+
     coords = findCoordsInsideRect(61, 0, 64, 10)
 
     for (const coord of coords) {
@@ -154,7 +161,7 @@ Game.prototype.visualize = function() {
     for (let x = 0; x < env.graphSize; x++) {
         for (let y = 0; y < env.graphSize; y++) {
 
-            let color = `hsl(${this.graph[packXY(x, y)] / 2}, 100%, 60%)`
+            let color = `hsl(570${this.graph[packXY(x, y)] * 1.7}, 100%, 60%)`
             if (this.visited[packXY(x, y)] === 1 && this.graph[packXY(x, y)] === 0) color = 'blue'
             env.cm.fillStyle = color
 
@@ -166,13 +173,10 @@ Game.prototype.visualize = function() {
 
     // Draw goals
 
-    env.cm.fillStyle = 'white'
-
     for (const packedCoord of this.goals) {
 
         const coord = unpackCoord(packedCoord)
 
-        env.cm.font = `${env.coordSize * 2}px Arial`
-        env.cm.fillText("X", coord.x * env.coordSize, coord.y * env.coordSize)
+        env.cm.drawImage(document.getElementById('x'), coord.x * env.coordSize - env.coordSize / 2, coord.y * env.coordSize - env.coordSize / 2, env.coordSize * 2, env.coordSize * 2)
     }
 }

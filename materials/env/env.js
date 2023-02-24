@@ -41,7 +41,7 @@ Env.prototype.init = function() {
 
     // Turn off anti-aliasing
 
-    env.cm.imageSmoothingEnabled = false
+    env.cm.imageSmoothingEnabled = true
 
     env.initGames()
 }
