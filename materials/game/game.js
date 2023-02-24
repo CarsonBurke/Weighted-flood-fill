@@ -16,16 +16,18 @@ class Game {
             return
         }
 
-        while (this.floodGenGraph.length) {
+        while (this.floodGenGraph.size) {
 
-            let nextFloodGen = []
+            let nextFloodGen = new Set()
 
-            for (const coord of this.floodGenGraph) {
+            for (const packedCoord of this.floodGenGraph) {
 
-                if (this.graph[packCoord(coord)] > 0) {
+                const coord = unpackCoord(packedCoord)
 
-                    this.graph[packCoord(coord)] -= 1
-                    nextFloodGen.push(coord)
+                if (this.graph[packedCoord] > 0) {
+
+                    this.graph[packedCoord] -= 1
+                    nextFloodGen.add(packedCoord)
                     continue
                 }
 
@@ -37,15 +39,17 @@ class Game {
                     }
 
                     // We're outside the map
-                    console.log(isXYInGraph(adjCoord.x, adjCoord.y))
+
                     if (!isXYInGraph(adjCoord.x, adjCoord.y)) continue
 
-                    if (this.graph[packCoord(adjCoord)] === 255) continue
+                    const packedAdjcoord = packCoord(adjCoord)
+
+                    if (this.graph[packedAdjcoord] === 255) continue
                     
-                    if (this.visited[packCoord(adjCoord)] === 1) continue
-                    this.visited[packCoord(adjCoord)] = 1
+                    if (this.visited[packedAdjcoord] === 1) continue
+                    this.visited[packedAdjcoord] = 1
                     
-                    nextFloodGen.push(adjCoord)
+                    nextFloodGen.add(packedAdjcoord)
                 }
             }
             
@@ -53,7 +57,14 @@ class Game {
             break
         }
 
-        if (!this.floodGenGraph.length) this.running = false
+        for (const packedCoord of this.goals) {
+            
+            if (!this.floodGenGraph.has(packedCoord)) continue
+
+            this.running = false
+        }
+
+        if (!this.floodGenGraph.size) this.running = false
 
         this.visualize()
     }
@@ -68,11 +79,9 @@ Game.prototype.init = function() {
     this.running = true
     this.graph = new Uint8Array(env.graphSize * env.graphSize)
     this.visited = new Uint8Array(env.graphSize * env.graphSize)
-    this.floodGenGraph = [{
-        x: 2,
-        y: 2
-    }]
-    for (const coord of this.floodGenGraph) this.visited[packCoord(coord)] = 1
+    this.floodGenGraph = new Set([packXY(env.graphSize - 1, env.graphSize - 1)])
+    for (const packedCoord of this.floodGenGraph) this.visited[packedCoord] = 1
+    this.goals = new Set([packXY(35, 10), packXY(5, 40)])
 
     for (let x = 0; x < env.graphSize; x++) {
         for (let y = 0; y < env.graphSize; y++) {
@@ -88,15 +97,59 @@ Game.prototype.init = function() {
         this.graph[packCoord(coord)] = 255
     }
 
-    coords = findCoordsInsideRect(8, 60, 80, 25)
+    coords = findCoordsInsideRect(8, 30, 25, 90)
 
     for (const coord of coords) {
 
         this.graph[packCoord(coord)] = 255
     }
+
+    coords = findCoordsInsideRect(8, 90, 25, 100)
+
+    for (const coord of coords) {
+
+        this.graph[packCoord(coord)] = 20
+    }
+
+    coords = findCoordsInsideRect(50, 60, 80, 80)
+
+    for (const coord of coords) {
+
+        this.graph[packCoord(coord)] = 255
+    }
+
+    coords = findCoordsInsideRect(26, 60, 50, 80)
+
+    for (const coord of coords) {
+
+        this.graph[packCoord(coord)] = 30
+    }
+
+    coords = findCoordsInsideRect(65, 5, 80, 60)
+
+    for (const coord of coords) {
+
+        this.graph[packCoord(coord)] = 255
+    }
+
+    coords = findCoordsInsideRect(50, 0, 60, 55)
+
+    for (const coord of coords) {
+
+        this.graph[packCoord(coord)] = 255
+    }
+
+    coords = findCoordsInsideRect(61, 0, 64, 10)
+
+    for (const coord of coords) {
+
+        this.graph[packCoord(coord)] = 50
+    }
 }
 
 Game.prototype.visualize = function() {
+
+    // Draw flood values
 
     for (let x = 0; x < env.graphSize; x++) {
         for (let y = 0; y < env.graphSize; y++) {
@@ -109,5 +162,17 @@ Game.prototype.visualize = function() {
             env.cm.fillRect(x * env.coordSize, y * env.coordSize, env.coordSize, env.coordSize);
             env.cm.stroke();
         }
+    }
+
+    // Draw goals
+
+    env.cm.fillStyle = 'white'
+
+    for (const packedCoord of this.goals) {
+
+        const coord = unpackCoord(packedCoord)
+
+        env.cm.font = `${env.coordSize * 2}px Arial`
+        env.cm.fillText("X", coord.x * env.coordSize, coord.y * env.coordSize)
     }
 }
